@@ -2,7 +2,7 @@
 title: "BA 820 - Group Project"
 author: Zhaoying Chen (zychen96), Hui Jiang (hjiang97), Yiying Wang (wangy97), Rui
   Xu (xurr), Tyler Mcmurray (tfm), Yanyue Fu (yanyuefu)
-date: "12/6/2019"
+date: "12/9/2019"
 output: pdf_document
 ---
 
@@ -13,6 +13,9 @@ library(factoextra)
 library(corrplot)
 library(psych)
 library(GPArotation)
+library(cluster)
+
+set.seed(123456)
 
 
 bank <- read_csv(file = "bankdata_cleaned.csv")
@@ -21,8 +24,74 @@ data <- bank %>% select(., -job, -marital, -deposit)
 ```
 
 # Who Are We & What Are We Doing?
-Our group works for a finanical services company. We have colected data on our customers. Our data is basic information of demographics including variables like age, marital status, job, and education. We also have information regarding their relationship to the bank like there balance at the bank and loan status if they have some or not. Finally, we have information related to our last marketing campaign where the end goal was to have them open up a term deposit. There are multiple uses with this dataset. We can gain insight and benefits through multiple analysises that we will conduct. We will utilize explatory data analysis, cluster analysis, and supervized learning to benefit our company. 
+Our group works for a financial services company. We have collected data on our customers. Our data is basic information of demographics including variables like age, marital status, job, and education. We also have information regarding their relationship to the bank like there balance at the bank and loan status if they have some or not. Finally, we have information related to our last marketing campaign where the end goal was to have them open up a term deposit. There are multiple uses with this dataset. We can gain insight and benefits through multiple analyses that we will conduct. We will utilize exploratory data analysis, cluster analysis, and supervised learning to benefit our company. 
 
 # About Our Data
-As discussed above we have multiple different variables we want to utilize in our analysis. Some of the variables are categorical variables but unfortunately some of the methods we want to utilize requires only using numerical variablles; instead of deleting useful information we encoded them as dummy variables. After converting our numerical values the amount of variables changed to 29 in total, due to the dummy variables increasing the amount. We discussed utilizing a Principal Component Analysis, we will abreviate it to PCA from here on out, to deal with the increase as we can utilize this method for dimension reduction. However, after further consideration we realized utilizing a PCA to reduce the dimensions is inherently flawed as the binary variables and are not true continous variables like those needed for the PCA to be fully effective. We also realize we have `r nrow(data)` for `r ncol(data)`, so we do not think this level of dimensionality would cause serious problems. 
+As discussed above we have multiple different variables we want to utilize in our analysis. Some of the variables are categorical variables but unfortunately some of the methods we want to utilize requires only using numerical variables; instead of deleting useful information we encoded them as dummy variables. After converting our numerical values, the amount of variables changed to 29 in total, due to the dummy variables increasing the amount. We discussed utilizing a Principal Component Analysis, we will abbreviate it to PCA from here on out, to deal with the increase as we can utilize this method for dimension reduction. However, after further consideration we realized utilizing a PCA to reduce the dimensions is inherently flawed as the binary variables and are not true continuous variables like those needed for the PCA to be fully effective. We also realize we have `r nrow(data)` for `r ncol(data)`, so we do not think this level of dimensionality would cause serious problems.
+
+# Cluster Analysis
+We tried two methods for segmenting our data into groups. Those methods were the K-Means and hierarchical clustering. To determine the amount of clusters we utilized both the silhouette and WSS methods to help us better determine the amount of clusters to for K-Means and the cuts for the hierarchical clustering. The amount was between 2 and 4 clusters. 
+
+
+### K-Means Clustering Analysis
+We ran all three of those options for the amount of clusters, meaning using 2, 3, and then 4 clusters. We found that utilizing two clusters gave us the best silhouette width at .84 which was .1 higher than then the next closest option. We interpret a higher silhouette width as it means that the observations fall well into those groups we made. Utilizing two clusters we can see the amount of within each cluster which was 10,207 observations in one cluster and 427 in the other cluster.
+
+
+```{r include=FALSE}
+fviz_nbclust(data, kmeans, method = "silhouette", k.max=15)
+## gives us 2
+
+fviz_nbclust(data, kmeans, method = "wss", k.max=15)
+## looks more like 3 for elbow group
+
+k <- kmeans(data, centers=2, iter.max = 500, nstart = 500)
+plot(silhouette(k$cluster, dist=dist(data)), col = 1:2, border = NA)
+k$size
+```
+
+
+### Hierarchical Clustering Analysis
+We again utilized the same amount of clusters on this graph by cutting the dendrogram tree by 2, 3, and then 4 clusters. However, unlike K-Means clustering, Hierarchical clustering takes a bit more of an interpretation to what is the right amount of clusters. We decided that 3 cuts were the best decision as it small enough amount that our marketing team can still handle. There are also enough clusters that we can have a more targeted strategy for our next marketing campaign, by dealing with the groups differently more targeted to their groups likes, desires, and needs so that we are more effective and efficient next time around. The sizes of the groups are more different than with the K-means, for the better. The sizes of the groups are 1765, 8483, and 386. 
+
+
+```{r include=FALSE}
+data_dist <- dist(data, method = "euclidean")
+hfit <- hclust(data_dist, method = "ward.D")
+plot(hfit)
+hclust <- cutree(hfit, k=3)
+rect.hclust(hfit, k = 3, border ="green")
+data <- cbind(hclust, data)
+data %>% count(hclust)
+```
+
+
+# Using KNN To Improve Our Next Campaign
+
+We used all of our data for our above cluster analysis. However, we would need new data to use a KNN method. Instead we are going to run another Hierarchical Cluster analysis to create the 3 groups but only using 95% of our data. The remaining 5%, which is `r (.05 * nrow(data))` observations to use for our KNN method. The purpose of this is to show that we can take new observations, like new people utilizing our bank or data we derived from other methods, to assign into groups and prioritize and market different depending on where they now get assigned to. When we do get new data we would use all of the old data, like we did in the above clustering analysis to get groups. However, for this example we need to use some of our data to do the KNN method. What this means is we are inherently losing some of what made our groups our groups in the above analysis, meaning we are losing some information here compared to above. This means our analysis here should be taken more as a way and example of what we can do with future data for our campaigns strategies.
+
+
+```{r include=FALSE}
+#### Utilizing partial data to create train test for knn
+data_knn <- data %>% select(-hclust)
+
+smp_size <- floor(0.95 * nrow(data))
+## set the seed to make your partition reproducible
+train_ind <- sample(seq_len(nrow(data)), size = smp_size)
+
+data_train_knn <- data_knn[train_ind, ]
+data_test_knn <- data_knn[-train_ind, ]
+
+data_dist_knn <- dist(data_train_knn, method = "euclidean")
+hfit_knn <- hclust(data_dist_knn, method = "ward.D")
+plot(hfit_knn)
+hclust_knn <- cutree(hfit_knn, k=3)
+rect.hclust(hfit, k = 3, border ="green")
+data_train_knn <- cbind(hclust_knn, data_train_knn)
+data_train_knn %>% count(hclust_knn)
+```
+
+
+```{r}
+### KNN Code
+```
 
