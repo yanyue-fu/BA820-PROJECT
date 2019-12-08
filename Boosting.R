@@ -94,7 +94,7 @@ ggplot(bank1)+geom_col(aes(DurationRange,deposit))+scale_x_discrete(
 
 summary(bank1)
 
-# boosting
+# boosting 
 fit.tree <- rpart(f1,
                   bk_train,
                   control = rpart.control(cp = 0.01))
