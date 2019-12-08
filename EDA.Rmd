@@ -29,14 +29,14 @@ view(data)
 data %>% 
   group_by(job) %>% 
   summarize(totalDeposit=sum(Deposit)) %>% 
-  ggplot(aes(x=job,y=totalDeposit)) +
+  ggplot(aes(x=job,y=totalDeposit,fill=job)) +
   geom_col() + 
   labs(titles = "Jobs VS Deposit")
 
 data %>% 
   group_by(job) %>% 
   summarize(totalBalance=sum(balance)) %>% 
-  ggplot(aes(x=job,y=totalBalance)) +
+  ggplot(aes(x=job,y=totalBalance,fill=job)) +
   geom_col() + 
   labs(title="Jobs VS Balance")
 ```
