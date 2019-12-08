@@ -31,14 +31,30 @@ Our group works for a financial services company. We have collected data on our 
 # About Our Data
 As discussed above we have multiple different variables we want to utilize in our analysis. Some of the variables are categorical variables but unfortunately some of the methods we want to utilize requires only using numerical variables; instead of deleting useful information we encoded them as dummy variables. After converting our numerical values, the amount of variables changed to 29 in total, due to the dummy variables increasing the amount. We discussed utilizing a Principal Component Analysis, we will abbreviate it to PCA from here on out, to deal with the increase as we can utilize this method for dimension reduction. However, after further consideration we realized utilizing a PCA to reduce the dimensions is inherently flawed as the binary variables and are not true continuous variables like those needed for the PCA to be fully effective. 
 
-We also used an Exploratory Factor Analysis method to our dataset. In the beginning, the factor analysis (EFA) failed for the dataset because there are too many dummy variables that identify the jobs and marital status to give us a NA p-value when we use the Bartlett’s test for correlation accuracy. We need to have a good dataset for EFA, so I replaced the job column with the numeric value, such as a rating for different jobs by their average balance value in the dataset. Values in the material column also replaced by 1, 2 and 3 [1: single, 2: married, 3:divorced]. 
+We also used an Exploratory Factor Analysis(EFA) method to our dataset. In the beginning, the factor analysis (EFA) failed for the dataset because there are too many dummy variables that identify the jobs and marital status to give us a NA p-value when we use the Bartlett’s test for correlation accuracy. We need to have a good dataset for EFA, so I replaced the job column with the numeric value, such as a rating for different jobs by their average balance value in the dataset. Values in the material column also replaced by 1, 2 and 3 [1: single, 2: married, 3:divorced]. 
 
 The EFA model works for the replaced dataset with a Bartlett’s test p-value equal to 0. After adjusting some variables. The outcome shows that these variables could be divided into 5 factors. The deposit and duration variable could be named as the phone-call effect. Age and marital could be named as the client background. The pdays and pervious variable could be named as history record. The loan and housing variable in two factors, but could see them as the financial background. The four potential patterns are affecting clients’ behavior, we could take them into consideration for bank campaign designing.
 
-We also realize we have `r nrow(data)` for `r ncol(data)`, so we do not think this level of dimensionality would cause serious problems. For the rest of our analysis we did not apply any of the mentioned dimension reduction techniques.
+We also realize we have `r nrow(data)` for `r ncol(data)`, so we do not think this level of dimensionality would cause serious problems. For the rest of our analysis we did not apply any of the mentioned dimension reduction techniques like EFA and PCA.
 
 # Exploring Our Data
 We wanted to get a better understanding of our data and gain some insight through exploring our data. We believe some of this might help guide our understanding and analysis in the future. One insight we gained was that most of the deposits are from the phone calls smaller than 2 phone calls. This could mean after a certain point it might be a waste of resources to keep trying to get to open a term deposit .Also most of the deposits are from the duration smaller than 2000 secs for the last phone call. If it goes above this time it could mean either our staff is taking too long or that they may not be as able to clearly communicate and need some more help with training. People who have an education level of 2 or 3 are most likely to deposit, which in laymen terms is completing high school and completing a higher education or trade school, respectively for 2 and 3. People who have an age from 30-50 are more likely to have a deposit than other age groups, especially the people who are and between the ages of 30-40. Depending on the job plots, it is very similar that the number of job who do the deposit and also the balance they deposit.
+
+```{r fig.height=6, fig.width=14}
+data1 <- data
+data1$ageRange <- findInterval(data1$age, c(10, 20, 30, 40,50,60,70,80,90))
+
+data1 %>% 
+  group_by(ageRange) %>% 
+  summarize(totalDeposit=sum(Deposit)) %>% 
+  ggplot(aes(x= as.factor(ageRange), y=totalDeposit)) +
+  geom_col(aes(fill = as.factor(ageRange))) +
+  labs(title = "Total Amount of Deposits For Each Age Bin", 
+       x = "Age Bin By 10 (1 = 0-10, 2 = 10-20, ..etc)",
+       y = "Number of Opened Deposits", 
+       fill = "Age Bin")
+```
+
 
 # Cluster Analysis
 We tried two methods for segmenting our data into groups. Those methods were the K-Means and hierarchical clustering. To determine the amount of clusters we utilized both the silhouette and WSS methods to help us better determine the amount of clusters to for K-Means and the cuts for the hierarchical clustering. The amount was between 2 and 4 clusters. We will try 2, 3, and then 4 clusters for our data through the two methods we will be applying to our data.  
@@ -74,7 +90,7 @@ rect.hclust(hfit, k = 3, border ="green")
 data <- cbind(hclust, data)
 data %>% count(hclust)
 ```
-```{r include=FALSE}
+```{r echo=FALSE, fig.height=6, fig.width=14}
 ggparcoord(data = data, columns = 2:11, mapping=aes(color=as.factor(hclust))) +
   scale_color_discrete("hclust",labels=levels(as.factor(data$hclust))) +
   facet_grid(hclust ~ .)
