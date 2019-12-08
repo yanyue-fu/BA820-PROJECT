@@ -73,19 +73,6 @@ We tried two methods for segmenting our data into groups. Those methods were the
 ### K-Means Clustering Analysis
 We ran all three of those options for the amount of clusters, meaning using 2, 3, and then 4 clusters. We found that utilizing two clusters gave us the best silhouette width at .84 which was .1 higher than then the next closest option. We interpret a higher silhouette width as it means that the observations fall well into those groups we made. Utilizing two clusters we can see the amount of within each cluster which was 10,207 observations in one cluster and 427 in the other cluster.
 
-
-```{r eval=FALSE, include=FALSE}
-fviz_nbclust(data, kmeans, method = "silhouette", k.max=15)
-## gives us 2
-
-fviz_nbclust(data, kmeans, method = "wss", k.max=15)
-## looks more like 3 for elbow group
-
-k <- kmeans(data, centers=3, iter.max = 500, nstart = 500)
-plot(silhouette(k$cluster, dist=dist(data)), col = 1:3, border = NA)
-k$size
-```
-
 ### Hierarchical Clustering Analysis
 We again utilized the same amount of clusters on this graph by cutting the dendrogram tree by 2, 3, and then 4 clusters. However, unlike K-Means clustering, Hierarchical clustering takes a bit more of an interpretation to what is the right amount of clusters. We decided that 3 cuts were the best decision as it small enough amount that our marketing team can still handle. There are also enough clusters that we can have a more targeted strategy for our next marketing campaign, by dealing with the groups differently more targeted to their groups likes, desires, and needs so that we are more effective and efficient next time around. The sizes of the groups are more different than with the K-means, for the better. The sizes of the groups are 1765, 8483, and 386 for groups 1, 2, and 3 respectively.
 
