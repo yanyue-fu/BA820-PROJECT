@@ -15,6 +15,7 @@ library(psych)
 library(GPArotation)
 library(cluster)
 library(class)
+library(GGally)
 
 set.seed(123456)
 
@@ -45,15 +46,18 @@ fviz_nbclust(data, kmeans, method = "silhouette", k.max=15)
 fviz_nbclust(data, kmeans, method = "wss", k.max=15)
 ## looks more like 3 for elbow group
 
-k <- kmeans(data, centers=2, iter.max = 500, nstart = 500)
-plot(silhouette(k$cluster, dist=dist(data)), col = 1:2, border = NA)
+k <- kmeans(data, centers=3, iter.max = 500, nstart = 500)
+plot(silhouette(k$cluster, dist=dist(data)), col = 1:3, border = NA)
 k$size
 ```
 
 
 ### Hierarchical Clustering Analysis
-We again utilized the same amount of clusters on this graph by cutting the dendrogram tree by 2, 3, and then 4 clusters. However, unlike K-Means clustering, Hierarchical clustering takes a bit more of an interpretation to what is the right amount of clusters. We decided that 3 cuts were the best decision as it small enough amount that our marketing team can still handle. There are also enough clusters that we can have a more targeted strategy for our next marketing campaign, by dealing with the groups differently more targeted to their groups likes, desires, and needs so that we are more effective and efficient next time around. The sizes of the groups are more different than with the K-means, for the better. The sizes of the groups are 1765, 8483, and 386. 
+We again utilized the same amount of clusters on this graph by cutting the dendrogram tree by 2, 3, and then 4 clusters. However, unlike K-Means clustering, Hierarchical clustering takes a bit more of an interpretation to what is the right amount of clusters. We decided that 3 cuts were the best decision as it small enough amount that our marketing team can still handle. There are also enough clusters that we can have a more targeted strategy for our next marketing campaign, by dealing with the groups differently more targeted to their groups likes, desires, and needs so that we are more effective and efficient next time around. The sizes of the groups are more different than with the K-means, for the better. The sizes of the groups are 1765, 8483, and 386 for groups 1, 2, and 3 respectively.
 
+
+### The Groups
+The below graphic is broken out by each group. this gives us some insight into the different groups. This only shows some of the data and doesn't have all variables. However, some distinctions that should be noted is that Group 1 and Group 2 are very similar, however, it seems Group 2 has increased values in regards to the last campaign compared to Group 1. A big distinction is that Group 3 has a lot higher balance variables than Group 1 and Group 2. The purpose of this graphic is to get a rough understanding of the groups and to verify that these groups do have differences and we are not just forcing a split in groups when really it should be less groups. We still feel comfortable with having three groups.   
 
 ```{r include=FALSE}
 data_dist <- dist(data, method = "euclidean")
@@ -63,6 +67,11 @@ hclust <- cutree(hfit, k=3)
 rect.hclust(hfit, k = 3, border ="green")
 data <- cbind(hclust, data)
 data %>% count(hclust)
+```
+```{r}
+ggparcoord(data = data, columns = 2:11, mapping=aes(color=as.factor(hclust))) +
+  scale_color_discrete("hclust",labels=levels(as.factor(data$hclust))) +
+  facet_grid(hclust ~ .)
 ```
 
 

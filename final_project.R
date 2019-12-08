@@ -4,6 +4,7 @@ library(corrplot)
 library(psych)
 library(GPArotation)
 library(cluster)
+library(GGally)
 
 
 bank <- read_csv(file = "bankdata_cleaned.csv")
@@ -14,6 +15,10 @@ data <- bank %>% select(., -job, -marital, -deposit)
 ### We can not run a pca because our data has 
 ### binary variables that are dummy and not continue
 ### Also there is no concern as 
+
+
+
+
 
 #### Clustering
 fviz_nbclust(data, kmeans, method = "silhouette", k.max=15)
@@ -37,9 +42,19 @@ rect.hclust(hfit, k = 3, border ="green")
 
 data %>% count(hclust)
 
+# H clust Graphic
+
+ggparcoord(data = data, columns = 2:11, mapping=aes(color=as.factor(hclust))) +
+  scale_color_discrete("hclust",labels=levels(as.factor(data$hclust))) +
+  facet_grid(hclust ~ .)
+
 #### Clustering
 
-##### KNN
+
+
+
+
+#### KNN
 
 data_knn <- data %>% select(-hclust)
 
@@ -64,3 +79,4 @@ data_train_knn <- cbind(hclust_knn, data_train_knn)
 data_test_knn <- cbind(knn, data_test_knn)
 #### Knn
 
+View(data)
