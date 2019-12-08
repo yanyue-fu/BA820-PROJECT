@@ -16,6 +16,11 @@ library(GPArotation)
 library(cluster)
 library(class)
 library(GGally)
+library(gridExtra)
+library(grid)
+library(png)
+library(downloader)
+library(grDevices)
 
 set.seed(123456)
 
@@ -31,13 +36,42 @@ Our group works for a financial services company. We have collected data on our 
 # About Our Data
 As discussed above we have multiple different variables we want to utilize in our analysis. Some of the variables are categorical variables but unfortunately some of the methods we want to utilize requires only using numerical variables; instead of deleting useful information we encoded them as dummy variables. After converting our numerical values, the amount of variables changed to 29 in total, due to the dummy variables increasing the amount. We discussed utilizing a Principal Component Analysis, we will abbreviate it to PCA from here on out, to deal with the increase as we can utilize this method for dimension reduction. However, after further consideration we realized utilizing a PCA to reduce the dimensions is inherently flawed as the binary variables and are not true continuous variables like those needed for the PCA to be fully effective. 
 
-We also used an Exploratory Factor Analysis method to our dataset. In the beginning, the factor analysis (EFA) failed for the dataset because there are too many dummy variables that identify the jobs and marital status to give us a NA p-value when we use the Bartlett’s test for correlation accuracy. We need to have a good dataset for EFA, so I replaced the job column with the numeric value, such as a rating for different jobs by their average balance value in the dataset. Values in the material column also replaced by 1, 2 and 3 [1: single, 2: married, 3:divorced]. 
+We also used an Exploratory Factor Analysis(EFA) method to our dataset. In the beginning, the factor analysis (EFA) failed for the dataset because there are too many dummy variables that identify the jobs and marital status to give us a NA p-value when we use the Bartlett’s test for correlation accuracy. We need to have a good dataset for EFA, so I replaced the job column with the numeric value, such as a rating for different jobs by their average balance value in the dataset. Values in the material column also replaced by 1, 2 and 3 [1: single, 2: married, 3:divorced]. 
 
 The EFA model works for the replaced dataset with a Bartlett’s test p-value equal to 0. After adjusting some variables. The outcome shows that these variables could be divided into 5 factors. The deposit and duration variable could be named as the phone-call effect. Age and marital could be named as the client background. The pdays and pervious variable could be named as history record. The loan and housing variable in two factors, but could see them as the financial background. The four potential patterns are affecting clients’ behavior, we could take them into consideration for bank campaign designing.
 
-We also realize we have `r nrow(data)` for `r ncol(data)`, so we do not think this level of dimensionality would cause serious problems. For the rest of our analysis we did not apply any of the mentioned dimension reduction techniques.
+We also realize we have `r nrow(data)` for `r ncol(data)`, so we do not think this level of dimensionality would cause serious problems. For the rest of our analysis we did not apply any of the mentioned dimension reduction techniques like EFA and PCA.
 
 # Exploring Our Data
+We wanted to get a better understanding of our data and gain some insight through exploring our data. We believe some of this might help guide our understanding and analysis in the future. One insight we gained was that most of the deposits are from the phone calls smaller than 2 phone calls. This could mean after a certain point it might be a waste of resources to keep trying to get to open a term deposit .Also most of the deposits are from the duration smaller than 2000 secs for the last phone call. If it goes above this time it could mean either our staff is taking too long or that they may not be as able to clearly communicate and need some more help with training. People who have an education level of 2 or 3 are most likely to deposit, which in laymen terms is completing high school and completing a higher education or trade school, respectively for 2 and 3. People who have an age from 30-50 are more likely to have a deposit than other age groups, especially the people who are and between the ages of 30-40. Depending on the job plots, it is very similar that the number of job who do the deposit and also the balance they deposit. The two graphics below show the amount of deposits opened by Age groups and then Education levels. 
+
+```{r echo=FALSE, fig.height=6, fig.width=14}
+data1 <- data
+data1$ageRange <- findInterval(data1$age, c(10, 20, 30, 40,50,60,70,80,90))
+
+data1 %>% 
+  group_by(ageRange) %>% 
+  summarize(totalDeposit=sum(Deposit)) %>% 
+  ggplot(aes(x= as.factor(ageRange), y=totalDeposit)) +
+  geom_col(aes(fill = as.factor(ageRange))) +
+  labs(title = "Total Amount of Deposits For Each Age Bin", 
+       x = "Age Bin By 10 (1 = 10-19, 2 = 20-29, ..etc)",
+       y = "Number of Opened Deposits", 
+       fill = "Age Bin") -> p1
+
+data %>% 
+  group_by(education) %>% 
+  summarize(totalDeposit=sum(Deposit)) %>% 
+  ggplot(aes(x=as.factor(education),y=totalDeposit)) +
+  geom_col(aes(fill = as.factor(education))) +
+   labs(title = "Total Amount of Deposits For Each Education Level", 
+       x = "Education Level (Higher Means More Education)",
+       y = "Number of Opened Deposits", 
+       fill = "Education Level") -> p2
+
+grid.arrange(p1, p2, ncol = 2)
+```
+
 We wanted to get a better understanding of our data and gain some insight through exploring our data. We believe some of this might help guide our understanding and analysis in the future. One insight we gained was that most of the deposits are from the phone calls smaller than 2 phone calls. This could mean after a certain point it might be a waste of resources to keep trying to get to open a term deposit .Also most of the deposits are from the duration smaller than 2000 secs for the last phone call. If it goes above this time it could mean either our staff is taking too long or that they may not be as able to clearly communicate and need some more help with training. People who have an education level of 2 or 3 are most likely to deposit, which in laymen terms is completing high school and completing a higher education or trade school, respectively for 2 and 3. People who have an age from 30-50 are more likely to have a deposit than other age groups, especially the people who are and between the ages of 30-40. Depending on the job plots, it is very similar that the number of job who do the deposit and also the balance they deposit.The people whose job is management has the highest number of deposit and also the highest balance among all other jobs. The top 4 jobs has the most deposits and also balance is management, technician, blue-collar and admin.
 
 # Cluster Analysis
@@ -46,24 +80,11 @@ We tried two methods for segmenting our data into groups. Those methods were the
 ### K-Means Clustering Analysis
 We ran all three of those options for the amount of clusters, meaning using 2, 3, and then 4 clusters. We found that utilizing two clusters gave us the best silhouette width at .84 which was .1 higher than then the next closest option. We interpret a higher silhouette width as it means that the observations fall well into those groups we made. Utilizing two clusters we can see the amount of within each cluster which was 10,207 observations in one cluster and 427 in the other cluster.
 
-
-```{r eval=FALSE, include=FALSE}
-fviz_nbclust(data, kmeans, method = "silhouette", k.max=15)
-## gives us 2
-
-fviz_nbclust(data, kmeans, method = "wss", k.max=15)
-## looks more like 3 for elbow group
-
-k <- kmeans(data, centers=3, iter.max = 500, nstart = 500)
-plot(silhouette(k$cluster, dist=dist(data)), col = 1:3, border = NA)
-k$size
-```
-
 ### Hierarchical Clustering Analysis
 We again utilized the same amount of clusters on this graph by cutting the dendrogram tree by 2, 3, and then 4 clusters. However, unlike K-Means clustering, Hierarchical clustering takes a bit more of an interpretation to what is the right amount of clusters. We decided that 3 cuts were the best decision as it small enough amount that our marketing team can still handle. There are also enough clusters that we can have a more targeted strategy for our next marketing campaign, by dealing with the groups differently more targeted to their groups likes, desires, and needs so that we are more effective and efficient next time around. The sizes of the groups are more different than with the K-means, for the better. The sizes of the groups are 1765, 8483, and 386 for groups 1, 2, and 3 respectively.
 
 ### The Groups
-The below graphic is broken out by each group. this gives us some insight into the different groups. This only shows some of the data and doesn't have all variables. However, some distinctions that should be noted is that Group 1 and Group 2 are very similar, however, it seems Group 2 has increased values in regards to the last campaign compared to Group 1. A big distinction is that Group 3 has a lot higher balance variables than Group 1 and Group 2. The purpose of this graphic is to get a rough understanding of the groups and to verify that these groups do have differences and we are not just forcing a split in groups when really it should be less groups. We still feel comfortable with having three groups.   
+The below graphic is broken out by each group. This gives us some insight into the different groups. This only shows some of the data and doesn't have all variables. However, some distinctions that should be noted is that Group 1 and Group 2 are very similar, however, it seems Group 2 has increased values in regards to the last campaign compared to Group 1. A big distinction is that Group 3 has a higher balance variables than Group 1 and Group 2. The purpose of this graphic is to get a rough understanding of the groups and to verify that these groups do have differences and we are not just forcing a split in groups when really it should be less groups. We still feel comfortable with having three groups.   
 
 ```{r include=FALSE}
 data_dist <- dist(data, method = "euclidean")
@@ -74,22 +95,23 @@ rect.hclust(hfit, k = 3, border ="green")
 data <- cbind(hclust, data)
 data %>% count(hclust)
 ```
-```{r include=FALSE}
+```{r echo=FALSE, fig.height= 5, fig.width=14}
 ggparcoord(data = data, columns = 2:11, mapping=aes(color=as.factor(hclust))) +
   scale_color_discrete("hclust",labels=levels(as.factor(data$hclust))) +
   facet_grid(hclust ~ .)
 ```
-
-
 # Using KNN To Improve Our Next Campaign
-We used all of our data for our above cluster analysis. However, we would need new data to use a KNN method. Instead we are going to run another Hierarchical Cluster analysis to create the 3 groups but only using 95% of our data. The remaining 5%, which is `r (.05 * nrow(data))` observations to use for our KNN method. The purpose of this is to show that we can take new observations, like new people utilizing our bank or data we derived from other methods, to assign into groups and prioritize and market different depending on where they now get assigned to. When we do get new data we would use all of the old data, like we did in the above clustering analysis to get groups. However, for this example we need to use some of our data to do the KNN method. What this means is we are inherently losing some of what made our groups our groups in the above analysis, meaning we are losing some information here compared to above. This means our analysis here should be taken more as a way and example of what we can do with future data for our campaigns strategies.
+We used all of our data for our above cluster analysis. However, we would need new data to use a KNN method. Instead we are going to run another Hierarchical Cluster analysis to create the 3 groups but only using 90% of our data. The remaining 10%, which is `r (.1 * nrow(data))` observations to use for our KNN method. The purpose of this is to show that we can take new observations, like new people utilizing our bank or data we derived from other methods, to assign into groups and prioritize and market different depending on where they now get assigned to. When we do get new data we would use all of the old data, like we did in the above clustering analysis to get groups. However, for this example we need to use some of our data to do the KNN method. What this means is we are inherently losing some of what made our groups our groups in the above analysis, meaning we are losing some information here compared to above. This means our analysis here should be taken more as a way and example of what we can do with future data for our campaigns strategies.
 
+The below graphics show us the identification of all groups through the hierarchical clustering from that train set, 90% of our data, and the KNN classifications from the test set, 10% of our data, respectively. The purpose of this is to validate our groups through the response metric that we want to focus on, not validating if it got correctly labeled which as we known our groups here are completely fictitious and do not hold any inherent value but are just a label. We can see that the KNN is doing pretty well to identify the quality of the group we care about. As the graphs have roughly the same average amount of deposits opened for their groups.
+
+This would be helpful to our marketing team, as they get data about potential customers. They can utilize the KNN algorithm to easily and quickly classify people into groups. From those groups they can focus their energy first on those that would reward them the most which are groups 2 and 3 as they are the most likely to open deposits on average. This should make our marketing team more profitable and efficient of opening more deposits for our company.
 
 ```{r include=FALSE}
 #### Utilizing partial data to create train test for knn
 data_knn <- data %>% select(-hclust)
 
-smp_size <- floor(0.95 * nrow(data))
+smp_size <- floor(.9 * nrow(data))
 ## set the seed to make your partition reproducible
 train_ind <- sample(seq_len(nrow(data)), size = smp_size)
 
@@ -104,9 +126,37 @@ hclust_knn <- cutree(hfit_knn, k=3)
 
 ```{r include=FALSE}
 ### KNN Code
-knn <- knn(train = data_train_knn, test = data_test_knn, cl = hclust_knn, k =101)
+knn <- knn(train = data_train_knn, test = data_test_knn, cl = hclust_knn, k = 101)
 
 data_train_knn <- cbind(hclust_knn, data_train_knn)
 data_test_knn <- cbind(knn, data_test_knn)
 ```
+
+
+```{r echo=FALSE, fig.height= 6, fig.width=14}
+data_train_knn %>% 
+  group_by(hclust_knn) %>% 
+  summarize(totalDeposit=mean(Deposit)) %>% 
+  ggplot(aes(x=as.factor(hclust_knn), y=totalDeposit)) +
+  geom_col(aes(fill = as.factor(hclust_knn))) +
+   labs(title = "Total Amount of Deposits By Each Group", 
+       x = "The Cluster Assignment of Group",
+       y = "Number of Opened Deposits", 
+       fill = "Cluster Group") -> p3
+
+data_test_knn %>% 
+  group_by(knn) %>% 
+  summarize(totalDeposit=mean(Deposit)) %>% 
+  ggplot(aes(x=as.factor(knn),y=totalDeposit)) +
+  geom_col(aes(fill = as.factor(knn))) +
+   labs(title = "Total Amount of Deposits By Each Group", 
+       x = "The KNN Assignment of Group",
+       y = "Number of Opened Deposits", 
+       fill = "KNN Group") -> p4
+
+grid.arrange(p3, p4, ncol = 2)
+```
+
+
+
 
