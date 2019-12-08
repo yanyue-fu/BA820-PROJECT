@@ -14,6 +14,7 @@ library(corrplot)
 library(psych)
 library(GPArotation)
 library(cluster)
+library(class)
 
 set.seed(123456)
 
@@ -30,7 +31,7 @@ Our group works for a financial services company. We have collected data on our 
 As discussed above we have multiple different variables we want to utilize in our analysis. Some of the variables are categorical variables but unfortunately some of the methods we want to utilize requires only using numerical variables; instead of deleting useful information we encoded them as dummy variables. After converting our numerical values, the amount of variables changed to 29 in total, due to the dummy variables increasing the amount. We discussed utilizing a Principal Component Analysis, we will abbreviate it to PCA from here on out, to deal with the increase as we can utilize this method for dimension reduction. However, after further consideration we realized utilizing a PCA to reduce the dimensions is inherently flawed as the binary variables and are not true continuous variables like those needed for the PCA to be fully effective. We also realize we have `r nrow(data)` for `r ncol(data)`, so we do not think this level of dimensionality would cause serious problems.
 
 # Cluster Analysis
-We tried two methods for segmenting our data into groups. Those methods were the K-Means and hierarchical clustering. To determine the amount of clusters we utilized both the silhouette and WSS methods to help us better determine the amount of clusters to for K-Means and the cuts for the hierarchical clustering. The amount was between 2 and 4 clusters. 
+We tried two methods for segmenting our data into groups. Those methods were the K-Means and hierarchical clustering. To determine the amount of clusters we utilized both the silhouette and WSS methods to help us better determine the amount of clusters to for K-Means and the cuts for the hierarchical clustering. The amount was between 2 and 4 clusters. We will try 2, 3, and then 4 clusters for our data through the two methods we will be applying to our data.  
 
 
 ### K-Means Clustering Analysis
@@ -83,15 +84,15 @@ data_test_knn <- data_knn[-train_ind, ]
 
 data_dist_knn <- dist(data_train_knn, method = "euclidean")
 hfit_knn <- hclust(data_dist_knn, method = "ward.D")
-plot(hfit_knn)
 hclust_knn <- cutree(hfit_knn, k=3)
-rect.hclust(hfit, k = 3, border ="green")
-data_train_knn <- cbind(hclust_knn, data_train_knn)
-data_train_knn %>% count(hclust_knn)
 ```
 
 
-```{r}
+```{r nclude=FALSE}
 ### KNN Code
+knn <- knn(train = data_train_knn, test = data_test_knn, cl = hclust_knn, k =101)
+
+data_train_knn <- cbind(hclust_knn, data_train_knn)
+data_test_knn <- cbind(knn, data_test_knn)
 ```
 
