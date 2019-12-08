@@ -1,0 +1,125 @@
+---
+title: "group"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(factoextra)
+library(corrplot)
+library(ggplot2)
+library(data.table)
+#install.packages("psych")
+library(psych)
+
+#install.packages("GPArotation")
+library(GPArotation)
+```
+
+Input and View Data
+```{r}
+data<-fread("bankdata_cleaned.csv")
+view(data)
+```
+
+## Job VS Deposit
+## Job VS Balance
+
+```{r pressure, echo=FALSE}
+data %>% 
+  group_by(job) %>% 
+  summarize(totalDeposit=sum(Deposit)) %>% 
+  ggplot(aes(x=job,y=totalDeposit,fill=job)) +
+  geom_col() + 
+  labs(titles = "Jobs VS Deposit")
+
+data %>% 
+  group_by(job) %>% 
+  summarize(totalBalance=sum(balance)) %>% 
+  ggplot(aes(x=job,y=totalBalance,fill=job)) +
+  geom_col() + 
+  labs(title="Jobs VS Balance")
+```
+## Age VS Deposit
+
+```{r}
+
+data$ageRange<-findInterval(data$age, c(10,20, 30, 40,50,60,70,80,90))
+
+data %>% 
+  group_by(ageRange) %>% 
+  summarize(totalDeposit=sum(Deposit)) %>% 
+  ggplot(aes(x=ageRange,y=totalDeposit)) +
+  geom_col()
+```
+## Education VS Deposit
+```{r}
+data %>% 
+  group_by(education) %>% 
+  summarize(totalDeposit=sum(Deposit)) %>% 
+  ggplot(aes(x=education,y=totalDeposit)) +
+  geom_col()
+```
+## Duration VS Deposit
+## Duration VS Balance
+```{r}
+range(data$duration)
+data$DurationRange<-findInterval(data$duration, c(0,1000,2000,3000))
+
+data %>% 
+  group_by(DurationRange) %>% 
+  summarize(totalDep=sum(Deposit)) %>% 
+  ggplot(aes(x=DurationRange,y=totalDep)) +
+  geom_col() + 
+  labs(title = "Duration VS Deposit")
+
+data %>% 
+  group_by(DurationRange) %>% 
+  summarize(totalBal=sum(balance)) %>% 
+  ggplot(aes(x=DurationRange,y=totalBal)) +
+  geom_col() + 
+  labs(title = "Duration VS Balance")
+```
+## Campain VS Deposit
+## Campain VS Balance
+```{r}
+range(data$campaign)
+data$CampRange<-findInterval(data$campaign,c(0,5,10,15,20,25,30,35,40))
+
+data %>% 
+  group_by(CampRange) %>% 
+  summarize(totalDeposit=sum(Deposit)) %>% 
+  ggplot(aes(x=CampRange,y=totalDeposit)) +
+  geom_col() + 
+  labs(title = "Campain VS Deposit")
+
+data %>% 
+  group_by(CampRange) %>% 
+  summarize(totalBal=sum(balance)) %>% 
+  ggplot(aes(x=CampRange,y=totalBal)) +
+  geom_col() + 
+  labs(title = "Campain VS Balance")
+```
+## CampRange VS DurationgRange VS Deposit
+```{r}
+data %>% 
+  group_by(CampRange, DurationRange) %>% 
+  summarize(totalDeposit=sum(Deposit)) %>% 
+  ggplot(aes(x=CampRange,y=totalDeposit,fill=DurationRange)) +
+  geom_col(position="dodge2") + 
+  labs(title = "Campain VS Deposit")
+```
+
+# Results from EDA:
+1. Most of the deposits are from the phone calls smaller than 2
+2. Most of the deposits are from the duration smaller than 2000 secs
+3. The people who has education level2 and 3 are most likely to deposit
+4. People who has age from 30-50 are more likely to deposit, especially the people who are from 30-40, they have the highest rank to deposit
+5. Depending on the job plots, it is very similar that the number of job who do the deposit and also the balance they deposti. 
+
+
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
