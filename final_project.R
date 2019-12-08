@@ -55,10 +55,12 @@ hfit_knn <- hclust(data_dist_knn, method = "ward.D")
 plot(hfit_knn)
 hclust_knn <- cutree(hfit_knn, k=3)
 rect.hclust(hfit, k = 3, border ="green")
+
+
+knn <- knn(train = data_train_knn, test = data_test_knn, cl = hclust_knn, k =101)
+## utilized 101 as it was an odd number rounded from the sqrt of observations of the train
+
 data_train_knn <- cbind(hclust_knn, data_train_knn)
-data_train_knn %>% count(hclust_knn)
-
-
-
-
+data_test_knn <- cbind(knn, data_test_knn)
+#### Knn
 
