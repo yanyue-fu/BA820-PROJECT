@@ -55,7 +55,7 @@ data1 %>%
   ggplot(aes(x= as.factor(ageRange), y=totalDeposit)) +
   geom_col(aes(fill = as.factor(ageRange))) +
   labs(title = "Total Amount of Deposits For Each Age Bin", 
-       x = "Age Bin By 10 (1 = 0-10, 2 = 10-20, ..etc)",
+       x = "Age Bin By 10 (1 = 10-19, 2 = 20-29, ..etc)",
        y = "Number of Opened Deposits", 
        fill = "Age Bin") -> p1
 
@@ -106,7 +106,6 @@ We used all of our data for our above cluster analysis. However, we would need n
 The below graphics show us the identification of all groups through the hierarchical clustering from that train set, 90% of our data, and the KNN classifications from the test set, 10% of our data, respectively. The purpose of this is to validate our groups through the response metric that we want to focus on, not validating if it got correctly labeled which as we known our groups here are completely fictitious and do not hold any inherent value but are just a label. We can see that the KNN is doing pretty well to identify the quality of the group we care about. As the graphs have roughly the same average amount of deposits opened for their groups.
 
 This would be helpful to our marketing team, as they get data about potential customers. They can utilize the KNN algorithm to easily and quickly classify people into groups. From those groups they can focus their energy first on those that would reward them the most which are groups 2 and 3 as they are the most likely to open deposits on average. This should make our marketing team more profitable and efficient of opening more deposits for our company.
-
 
 ```{r include=FALSE}
 #### Utilizing partial data to create train test for knn
