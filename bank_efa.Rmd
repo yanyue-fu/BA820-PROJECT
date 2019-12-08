@@ -49,7 +49,7 @@ bank_efa2 = bank %>%
   mutate(marital = as.numeric(factor(marital,
                                      levels = c("single", "married", 
                                                 "divorced"))))
-
+befa_c2 = cor(bank_efa2)
 cortest.bartlett(befa_c2, nrow(bank_efa2))
 ```
 ```{r}
