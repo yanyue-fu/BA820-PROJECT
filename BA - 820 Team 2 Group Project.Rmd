@@ -38,9 +38,9 @@ The EFA model works for the replaced dataset with a Bartlett’s test p-value eq
 We also realize we have `r nrow(data)` for `r ncol(data)`, so we do not think this level of dimensionality would cause serious problems. For the rest of our analysis we did not apply any of the mentioned dimension reduction techniques like EFA and PCA.
 
 # Exploring Our Data
-We wanted to get a better understanding of our data and gain some insight through exploring our data. We believe some of this might help guide our understanding and analysis in the future. One insight we gained was that most of the deposits are from the phone calls smaller than 2 phone calls. This could mean after a certain point it might be a waste of resources to keep trying to get to open a term deposit .Also most of the deposits are from the duration smaller than 2000 secs for the last phone call. If it goes above this time it could mean either our staff is taking too long or that they may not be as able to clearly communicate and need some more help with training. People who have an education level of 2 or 3 are most likely to deposit, which in laymen terms is completing high school and completing a higher education or trade school, respectively for 2 and 3. People who have an age from 30-50 are more likely to have a deposit than other age groups, especially the people who are and between the ages of 30-40. Depending on the job plots, it is very similar that the number of job who do the deposit and also the balance they deposit.
+We wanted to get a better understanding of our data and gain some insight through exploring our data. We believe some of this might help guide our understanding and analysis in the future. One insight we gained was that most of the deposits are from the phone calls smaller than 2 phone calls. This could mean after a certain point it might be a waste of resources to keep trying to get to open a term deposit .Also most of the deposits are from the duration smaller than 2000 secs for the last phone call. If it goes above this time it could mean either our staff is taking too long or that they may not be as able to clearly communicate and need some more help with training. People who have an education level of 2 or 3 are most likely to deposit, which in laymen terms is completing high school and completing a higher education or trade school, respectively for 2 and 3. People who have an age from 30-50 are more likely to have a deposit than other age groups, especially the people who are and between the ages of 30-40. Depending on the job plots, it is very similar that the number of job who do the deposit and also the balance they deposit. The two graphics below show the amount of deposits opened by Age groups and then Education levels. 
 
-```{r fig.height=6, fig.width=14}
+```{r echo=FALSE, fig.height=5, fig.width=14}
 data1 <- data
 data1$ageRange <- findInterval(data1$age, c(10, 20, 30, 40,50,60,70,80,90))
 
@@ -53,6 +53,16 @@ data1 %>%
        x = "Age Bin By 10 (1 = 0-10, 2 = 10-20, ..etc)",
        y = "Number of Opened Deposits", 
        fill = "Age Bin")
+
+data %>% 
+  group_by(education) %>% 
+  summarize(totalDeposit=sum(Deposit)) %>% 
+  ggplot(aes(x=as.factor(education),y=totalDeposit)) +
+  geom_col(aes(fill = as.factor(education))) +
+   labs(title = "Total Amount of Deposits For Each Education Level", 
+       x = "Education Level (Higher Means More Education)",
+       y = "Number of Opened Deposits", 
+       fill = "Education Level")
 ```
 
 
@@ -90,7 +100,7 @@ rect.hclust(hfit, k = 3, border ="green")
 data <- cbind(hclust, data)
 data %>% count(hclust)
 ```
-```{r echo=FALSE, fig.height=6, fig.width=14}
+```{r echo=FALSE, fig.height= 5, fig.width=14}
 ggparcoord(data = data, columns = 2:11, mapping=aes(color=as.factor(hclust))) +
   scale_color_discrete("hclust",labels=levels(as.factor(data$hclust))) +
   facet_grid(hclust ~ .)
@@ -125,4 +135,19 @@ knn <- knn(train = data_train_knn, test = data_test_knn, cl = hclust_knn, k =101
 data_train_knn <- cbind(hclust_knn, data_train_knn)
 data_test_knn <- cbind(knn, data_test_knn)
 ```
+
+
+```{r echo=FALSE, fig.height= 5, fig.width=14}
+data_test_knn %>% 
+  group_by(knn) %>% 
+  summarize(totalDeposit=mean(Deposit)) %>% 
+  ggplot(aes(x=as.factor(knn),y=totalDeposit)) +
+  geom_col(aes(fill = as.factor(knn))) +
+   labs(title = "Total Amount of Deposits By Each Group", 
+       x = "The KNN Assignment of Group",
+       y = "Number of Opened Deposits", 
+       fill = "KNN Group")
+```
+
+
 
