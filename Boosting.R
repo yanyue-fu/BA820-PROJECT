@@ -40,12 +40,14 @@ library(MLmetrics)
 bank = read_csv("bankdata_cleaned.csv")
 set.seed(123)
 bank$train <- sample(c(0, 1), nrow(bank), replace = TRUE, prob = c(.3, .7))
-bank = bank %>% select(-deposit,-job,-marital)
+bank$deposit = NULL
+bank$job = NULL
+bank$marital = NULL
 glimpse(bank)
 bk_test <- bank %>% filter(train == 0)
 bk_train <- bank %>% filter(train == 1) 
-bk_train <- bk_train %>% select(-c(train)) 
-bk_test <- bk_test %>% select(-c(train))
+bk_train$train = NULL     
+bk_test$train = NULL  
 
 f1 = as.formula(Deposit ~age +
                   education+
@@ -72,6 +74,27 @@ f1 = as.formula(Deposit ~age +
                   m_married+
                   m_single)
 
+#Random Forest
+Deposit_rf <- randomForest(f1, bk_train, ntree = 1000, do.trace=F) 
+yhat_rf_train <- predict(Deposit_rf, bk_train)
+mse_rf_train <- mean((yhat_rf_train - bk_train$Deposit) ^2) 
+yhat_rf_test <- predict(Deposit_rf, bk_test)
+mse_rf_test <- mean((yhat_rf_test - bk_test$Deposit) ^2) 
+varImpPlot(Deposit_rf)
+mean(bank$duration)
+
+paste("Random Forest Train MSE",mse_rf_train)
+paste("Random Forest Train MSE",mse_rf_test)
+
+bank$DurationRange<-findInterval(bank$duration, c(0,100,200,300,400,500,600,800,1000,1500,2000,2500,3000))
+bank1 <-bank %>% group_by(DurationRange) %>% summarise(deposit=mean(Deposit))
+ggplot(bank1)+geom_col(aes(DurationRange,deposit))+scale_x_discrete(
+  limits=c("0","100","200","300","400","500","600","800","1000","1500","2000","2500","3000"))
+
+
+summary(bank1)
+
+# boosting 
 fit.tree <- rpart(f1,
                   bk_train,
                   control = rpart.control(cp = 0.01))
@@ -95,7 +118,7 @@ mse_btree_test <- mean((yhat_btree_test - bk_test$Deposit) ^ 2)
 print(mse_btree_test)
 
 ##########################################  Binary Classification method 
-df = read_csv("bank.csv")
+df = read_csv("bank-original.csv")
 df$pdays = NULL #Drop the variable `pdays` because it is misleading
 df$duration = NULL 
 glimpse(df)
@@ -105,7 +128,7 @@ registerDoParallel(cl)
 # Define model setting 
 # train and test 
 set.seed(123)
-trainIndex <- createDataPartition(bank$deposit,
+trainIndex <- createDataPartition(df$deposit,
                                   p = 0.8, # training contains 80% of data
                                   list = FALSE)
 dfTrain <- df[ trainIndex,]
@@ -219,9 +242,16 @@ bwplot(res , metric = c("AUC", "F1"))
 # Run a t-test to compare model performance (xbg and rf)
 compare_models(model_rf, model_xgb)
 
-
-
-
+varImpXGB <- varImp(model_xgb)
+varImpXGB 
+top4 <- varImpXGB$importance %>% head(n = 5)
+top5
+top5 <- rownames(top4)
+top5[match('poutcomesuccess', top5)] <- "poutcome"
+top5[match('contactunknown', top5)] <- "contact"
+top5[match('housingyes', top5)] <- "housing"
+top5[match('loanyes', top5)] <- "loan"
+cbind(top5,top4)
 
 
 
