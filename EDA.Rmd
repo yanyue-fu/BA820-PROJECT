@@ -18,22 +18,22 @@ library(GPArotation)
 
 Input and View Data
 ```{r}
-data<-fread("bankdata_cleaned.csv")
-view(data)
+dataEda<-fread("bankdata_cleaned.csv")
+view(dataEda)
 ```
 
 ## Job VS Deposit
 ## Job VS Balance
 
 ```{r pressure, echo=FALSE}
-data %>% 
+dataEda %>% 
   group_by(job) %>% 
   summarize(totalDeposit=sum(Deposit)) %>% 
   ggplot(aes(x=job,y=totalDeposit,fill=job)) +
   geom_col() + 
   labs(titles = "Jobs VS Deposit")
 
-data %>% 
+dataEda %>% 
   group_by(job) %>% 
   summarize(totalBalance=sum(balance)) %>% 
   ggplot(aes(x=job,y=totalBalance,fill=job)) +
@@ -44,9 +44,9 @@ data %>%
 
 ```{r}
 
-data$ageRange<-findInterval(data$age, c(10,20, 30, 40,50,60,70,80,90))
+dataEda$ageRange<-findInterval(dataEda$age, c(10,20, 30, 40,50,60,70,80,90))
 
-data %>% 
+dataEda %>% 
   group_by(ageRange) %>% 
   summarize(totalDeposit=sum(Deposit)) %>% 
   ggplot(aes(x=ageRange,y=totalDeposit)) +
@@ -54,7 +54,7 @@ data %>%
 ```
 ## Education VS Deposit
 ```{r}
-data %>% 
+dataEda %>% 
   group_by(education) %>% 
   summarize(totalDeposit=sum(Deposit)) %>% 
   ggplot(aes(x=education,y=totalDeposit)) +
@@ -63,17 +63,17 @@ data %>%
 ## Duration VS Deposit
 ## Duration VS Balance
 ```{r}
-range(data$duration)
-data$DurationRange<-findInterval(data$duration, c(0,1000,2000,3000))
+range(dataEda$duration)
+dataEda$DurationRange<-findInterval(dataEda$duration, c(0,1000,2000,3000))
 
-data %>% 
+dataEda %>% 
   group_by(DurationRange) %>% 
   summarize(totalDep=sum(Deposit)) %>% 
   ggplot(aes(x=DurationRange,y=totalDep)) +
   geom_col() + 
   labs(title = "Duration VS Deposit")
 
-data %>% 
+dataEda %>% 
   group_by(DurationRange) %>% 
   summarize(totalBal=sum(balance)) %>% 
   ggplot(aes(x=DurationRange,y=totalBal)) +
@@ -83,17 +83,17 @@ data %>%
 ## Campain VS Deposit
 ## Campain VS Balance
 ```{r}
-range(data$campaign)
-data$CampRange<-findInterval(data$campaign,c(0,5,10,15,20,25,30,35,40))
+range(dataEda$campaign)
+dataEda$CampRange<-findInterval(dataEda$campaign,c(0,5,10,15,20,25,30,35,40))
 
-data %>% 
+dataEda %>% 
   group_by(CampRange) %>% 
   summarize(totalDeposit=sum(Deposit)) %>% 
   ggplot(aes(x=CampRange,y=totalDeposit)) +
   geom_col() + 
   labs(title = "Campain VS Deposit")
 
-data %>% 
+dataEda %>% 
   group_by(CampRange) %>% 
   summarize(totalBal=sum(balance)) %>% 
   ggplot(aes(x=CampRange,y=totalBal)) +
@@ -102,7 +102,7 @@ data %>%
 ```
 ## CampRange VS DurationgRange VS Deposit
 ```{r}
-data %>% 
+dataEda %>% 
   group_by(CampRange, DurationRange) %>% 
   summarize(totalDeposit=sum(Deposit)) %>% 
   ggplot(aes(x=CampRange,y=totalDeposit,fill=DurationRange)) +
