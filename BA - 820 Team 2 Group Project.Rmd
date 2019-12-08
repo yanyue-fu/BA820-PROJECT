@@ -88,7 +88,7 @@ hclust_knn <- cutree(hfit_knn, k=3)
 ```
 
 
-```{r nclude=FALSE}
+```{r include=FALSE}
 ### KNN Code
 knn <- knn(train = data_train_knn, test = data_test_knn, cl = hclust_knn, k =101)
 
