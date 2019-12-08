@@ -109,14 +109,14 @@ ggparcoord(data = data, columns = 2:11, mapping=aes(color=as.factor(hclust))) +
 
 
 # Using KNN To Improve Our Next Campaign
-We used all of our data for our above cluster analysis. However, we would need new data to use a KNN method. Instead we are going to run another Hierarchical Cluster analysis to create the 3 groups but only using 95% of our data. The remaining 5%, which is `r (.05 * nrow(data))` observations to use for our KNN method. The purpose of this is to show that we can take new observations, like new people utilizing our bank or data we derived from other methods, to assign into groups and prioritize and market different depending on where they now get assigned to. When we do get new data we would use all of the old data, like we did in the above clustering analysis to get groups. However, for this example we need to use some of our data to do the KNN method. What this means is we are inherently losing some of what made our groups our groups in the above analysis, meaning we are losing some information here compared to above. This means our analysis here should be taken more as a way and example of what we can do with future data for our campaigns strategies.
+We used all of our data for our above cluster analysis. However, we would need new data to use a KNN method. Instead we are going to run another Hierarchical Cluster analysis to create the 3 groups but only using 90% of our data. The remaining 10%, which is `r (.1 * nrow(data))` observations to use for our KNN method. The purpose of this is to show that we can take new observations, like new people utilizing our bank or data we derived from other methods, to assign into groups and prioritize and market different depending on where they now get assigned to. When we do get new data we would use all of the old data, like we did in the above clustering analysis to get groups. However, for this example we need to use some of our data to do the KNN method. What this means is we are inherently losing some of what made our groups our groups in the above analysis, meaning we are losing some information here compared to above. This means our analysis here should be taken more as a way and example of what we can do with future data for our campaigns strategies.
 
 
 ```{r include=FALSE}
 #### Utilizing partial data to create train test for knn
 data_knn <- data %>% select(-hclust)
 
-smp_size <- floor(0.95 * nrow(data))
+smp_size <- floor(0.9 * nrow(data))
 ## set the seed to make your partition reproducible
 train_ind <- sample(seq_len(nrow(data)), size = smp_size)
 
@@ -139,6 +139,16 @@ data_test_knn <- cbind(knn, data_test_knn)
 
 
 ```{r echo=FALSE, fig.height= 5, fig.width=14}
+data %>% 
+  group_by(hclust) %>% 
+  summarize(totalDeposit=mean(Deposit)) %>% 
+  ggplot(aes(x=as.factor(hclust), y=totalDeposit)) +
+  geom_col(aes(fill = as.factor(hclust))) +
+   labs(title = "Total Amount of Deposits By Each Group", 
+       x = "The Cluster Assignment of Group",
+       y = "Number of Opened Deposits", 
+       fill = "Cluster Group")
+
 data_test_knn %>% 
   group_by(knn) %>% 
   summarize(totalDeposit=mean(Deposit)) %>% 
