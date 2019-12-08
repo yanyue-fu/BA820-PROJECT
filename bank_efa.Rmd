@@ -1,0 +1,95 @@
+---
+title: "Bank EFA Model"
+author: "Rui Xu"
+date: "12/8/2019"
+output: pdf_document
+---
+##Bank Campaign 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(stringsAsFactors = FALSE)
+options(digits = 3)
+```
+
+```{r, results='hide', warning=FALSE, message=FALSE}
+library(tidyverse)
+library(factoextra)
+library(corrplot)
+library(psych)
+library(GPArotation)
+bank = read_csv("bankdata_cleaned.csv")
+```
+
+```{r, warning=FALSE}
+bank_efa = bank %>% 
+  select(c(age, education:previous, job_admin:m_single))
+
+befa_c = cor(bank_efa)
+cortest.bartlett(befa_c, nrow(bank_efa))
+```
+
+```{r}
+bank%>%
+  group_by(job) %>%
+  summarise(balance = mean(balance)) %>%
+  arrange(balance) 
+```
+
+```{r,warning=FALSE}
+bank_efa2 = bank %>%
+  select(age:previous, Deposit) %>%
+  mutate(job = as.factor(job)) %>%
+  mutate(job = as.numeric(factor(job,
+                          levels = c("services","admin.","blue-collar",
+                                      "unemployed","housemaid","technician",
+                                      "student","entrepreneur","management",
+                                      "self-employed","retired")))) %>%
+  mutate(marital = as.factor(marital)) %>%
+  mutate(marital = as.numeric(factor(marital,
+                                     levels = c("single", "married", 
+                                                "divorced"))))
+
+cortest.bartlett(befa_c2, nrow(bank_efa2))
+```
+```{r}
+num_f = fa.parallel(bank_efa2, fm = "ml", fa = "fa")
+bfa1 = fa(bank_efa2, nfactors = 6, rotate = "oblimin", fm = "ml")
+print(bfa1, cut = .3)
+```
+
+```{r}
+bank_efa3 = bank_efa2 %>% select(-education)
+num_f = fa.parallel(bank_efa3, fm = "ml", fa = "fa")
+bfa2 = fa(bank_efa3, nfactors = 5, rotate = "oblimin", fm = "ml")
+print(bfa2, cut = .3)
+```
+```{r}
+fa.diagram(bfa2)
+```
+
+```{r, massage=FALSE, warning=fALSE}
+bank_fa1 = bank_efa3 %>% select(age, marital)
+psych::alpha(bank_fa1)
+```
+
+```{r,massage=FALSE, warning=fALSE}
+bank_fa23 = bank_efa3 %>% select(housing,loan)
+psych::alpha(bank_fa23)
+```
+
+```{r,massage=FALSE, warning=fALSE}
+bank_fa4 = bank_efa3 %>% select(duration, Deposit)
+psych::alpha(bank_fa4)
+```
+
+```{r,massage=FALSE, warning=fALSE}
+bank_fa5 = bank_efa3 %>% select(pdays, previous)
+psych::alpha(bank_fa5)
+```
+
+    Before designing a good bank marketing campaign based on the dataset, we want to study what is the potential pattern of our variables, so we used factor analysis.
+    In the beginning, the factor analysis model (EFA) failed for the dataset because there are too many dummy variables that identify the jobs and marital status to give us an NA p-value when we use the Bartletts test for correlation accuracy. We need to have a good dataset for EFA, so I replaced the job column with the numeric value, such as a rating for different jobs by their average balance value in the dataset. Values in the material column also replaced by 1, 2 and 3 [1: single, 2: married, 3:divorced]. 
+    The EFA model works for the replaced dataset with a Bartletts test p-value equal to 0. After adjusting some variables. The outcome shows that these variables could be divided into 5 factors. The deposit and duration variable could be named as the phone-call effect. Age and marital could be named as the client background. The pdays and pervious variable could be named as history recond. The loan and housing variable in two factors, but could see them as the financial background.  The four potential patterns are affecting clients’ behavior, we can take them into consideration for bank campaign designing.  
+
+
