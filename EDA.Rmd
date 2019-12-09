@@ -22,6 +22,22 @@ dataEda<-fread("bankdata_cleaned.csv")
 view(dataEda)
 ```
 
+## Corrplot 
+```{r}
+dataEda %>% 
+  select(age:Deposit,-deposit) ->corData
+corData %>% 
+  select_if(is.numeric)->corData
+
+cor(corData) %>% 
+  corrplot(method = "number",
+           type = "upper") 
+
+```
+
+
+
+
 ## Job VS Deposit
 ## Job VS Balance
 
