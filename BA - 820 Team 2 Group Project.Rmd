@@ -62,7 +62,7 @@ set.seed(123)
 
 
 bank <- read_csv(file = "bankdata_cleaned.csv")
-bank_term_deposit <- bank %>% select(deposit)
+bank_term_deposit <- bank %>% select(Deposit)
 data <- bank %>% select(., -job, -marital, -deposit)
 ```
 
@@ -123,6 +123,8 @@ We again utilized the same amount of clusters on this graph by cutting the dendr
 The below graphic is broken out by each group. This gives us some insight into the different groups. This only shows some of the data and doesn't have all variables. However, some distinctions that should be noted is that Group 1 and Group 2 are very similar, however, it seems Group 2 has increased values in regards to the last campaign compared to Group 1. A big distinction is that Group 3 has a higher balance variables than Group 1 and Group 2. The purpose of this graphic is to get a rough understanding of the groups and to verify that these groups do have differences and we are not just forcing a split in groups when really it should be less groups. We still feel comfortable with having three groups.   
 
 ```{r include=FALSE}
+data <- data %>% select(-Deposit)
+
 data_dist <- dist(data, method = "euclidean")
 hfit <- hclust(data_dist, method = "ward.D")
 plot(hfit)
@@ -136,7 +138,9 @@ ggparcoord(data = data, columns = 2:11, mapping=aes(color=as.factor(hclust))) +
   scale_color_discrete("hclust",labels=levels(as.factor(data$hclust))) +
   facet_grid(hclust ~ .)
 ```
+
 # Using KNN To Improve Our Next Campaign
+
 We used all of our data for our above cluster analysis. However, we would need new data to use a KNN method. Instead we are going to run another Hierarchical Cluster analysis to create the 3 groups but only using 90% of our data. The remaining 10%, which is `r (.1 * nrow(data))` observations to use for our KNN method. The purpose of this is to show that we can take new observations, like new people utilizing our bank or data we derived from other methods, to assign into groups and prioritize and market different depending on where they now get assigned to. When we do get new data we would use all of the old data, like we did in the above clustering analysis to get groups. However, for this example we need to use some of our data to do the KNN method. What this means is we are inherently losing some of what made our groups our groups in the above analysis, meaning we are losing some information here compared to above. This means our analysis here should be taken more as a way and example of what we can do with future data for our campaigns strategies.
 
 The below graphics show us the identification of all groups through the hierarchical clustering from that train set, 90% of our data, and the KNN classifications from the test set, 10% of our data, respectively. The purpose of this is to validate our groups through the response metric that we want to focus on, not validating if it got correctly labeled which as we known our groups here are completely fictitious and do not hold any inherent value but are just a label. We can see that the KNN is doing pretty well to identify the quality of the group we care about. As the graphs have roughly the same average amount of deposits opened for their groups.
@@ -152,7 +156,10 @@ smp_size <- floor(.9 * nrow(data))
 train_ind <- sample(seq_len(nrow(data)), size = smp_size)
 
 data_train_knn <- data_knn[train_ind, ]
+data_train_knn_Deposit <- bank_term_deposit[train_ind, ]
 data_test_knn <- data_knn[-train_ind, ]
+data_test_knn_Deposit <- bank_term_deposit[-train_ind, ]
+
 
 data_dist_knn <- dist(data_train_knn, method = "euclidean")
 hfit_knn <- hclust(data_dist_knn, method = "ward.D")
@@ -164,8 +171,8 @@ hclust_knn <- cutree(hfit_knn, k=3)
 ### KNN Code
 knn <- knn(train = data_train_knn, test = data_test_knn, cl = hclust_knn, k = 101)
 
-data_train_knn <- cbind(hclust_knn, data_train_knn)
-data_test_knn <- cbind(knn, data_test_knn)
+data_train_knn <- cbind(hclust_knn, data_train_knn_Deposit, data_train_knn)
+data_test_knn <- cbind(knn, data_test_knn_Deposit, data_test_knn)
 ```
 
 
@@ -195,15 +202,14 @@ grid.arrange(p3, p4, ncol = 2)
 
 
 # Using Supervised Machine Learning Methods 
-We already discussed some methods our company can use to become more effective and efficient but we did not include other effective methods which include other supervised machine learning methods to predict variables. A variable we are very concerned with is the of "deposit", whether the person opened a term deposit or not. Since the outcome (“deposit”) is a binary outcome, we need to use a classification method. Some of the best models are Logistic Regression, Random Forest, and eXtreme Gradient Boosting (XGBoosting) for this type of problem. In this section, XGBoost is applied instead of Boosting because it is an implementation of gradient boosted decision trees designed for speed and performance.
+We already discussed some methods our company can use to become more effective and efficient but we did not include other effective methods which includes other supervised machine learning methods to predict variables. A variable we are very concerned with is "deposit", whether the person opened a term deposit or not. Since the outcome (“deposit”) is a binary outcome, we need to use a classification method. Some of the best models are Logistic Regression, Random Forest, and eXtreme Gradient Boosting (XGBoosting) for this type of problem. In this section, XGBoost is applied instead of Boosting because it is an implementation of gradient boosted decision trees designed for speed and performance.
 
-After those three models were trained and making predictions, a confusion matrix is used to describe the performance of a classification model. Two key performance metrics were chosen to compare model performance: AUC and F score. AUC (Area Under The Curve) - ROC (Receiver Operating Characteristics) curve is a performance measurement for classification problem at various thresholds settings. It tells how much the model is capable of distinguishing between classes. The higher the AUC, the better the model is at distinguishing between customers that will open a deposit and not open a deposit. Moreover, F Score is a weighted average of the true positive rate (recall) and precision. Higher the F score the better the model is. 
+After those three models were trained and making predictions, we used a confusion matrix to describe the performance of our classification models. Two key performance metrics were chosen to compare model performance, AUC and F score. AUC (Area Under The Curve) - ROC (Receiver Operating Characteristics) curve is a performance measurement for classification problems at various thresholds settings. It tells how much the model is capable of distinguishing between classes. The higher the AUC, the better the model is at distinguishing between customers that will open a deposit and not open a deposit. Moreover, F Score is a weighted average of the true positive rate (recall) and precision. Higher the F score the better the model is. 
 
-As shown in the graph below, the XGBoosting has the highest AUC among them and the random forest has the highest F score among them. We can see that the logistics regression performed poorly for this dataset but we still cannot confirm which is the best between the remaining two models. 
+As shown in the graph below, the XGBoosting has the highest AUC among them and the random forest has the highest F score among them. We can see that the logistics regression performed poorly for this dataset but we still cannot confirm which is the best between the remaining two models. Furthermore, we had run a t-test to compare model performance. P-value > 0.05 then the models are not statistically different, so we decided to run both models to explain the dataset.
 
-Furthermore, we had run a t-test to compare model performance. P-value > 0.05 then the models are not statistically different, so we decided to run both models to explain the dataset.
+We see that duration has a high correlation with term deposits meaning the higher the duration, the more likely it is for a client to open a term deposit. The mean duration time is 373s. People who were above the duration status, were more likely to open a term deposit. The factor of age and balance can have impact on deposit as well. The MSE train is 0.0369 and MSE test is 0.1376 which seems reasonable for our random forest.
 
-We see that duration has a high correlation with term deposits meaning the higher the duration, the more likely it is for a client to open a term deposit. The mean duration time is 373s. People who were above the duration status, were more likely to open a term deposit. The factor of age and balance can have impact on deposit as well. The MSE train is 0.0369 and MSE test is 0.1376 which seems reasonable.
 ```{r include=FALSE}
 df = read_csv("bank-original.csv")
 df$pdays = NULL #Drop the variable `pdays` because it is misleading
@@ -325,9 +331,9 @@ bk_train$train = NULL
 bk_test$train = NULL  
 ```
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height= 6, fig.width=14}
 #Random Forest
-f1 = as.formula(Deposit ~.)
+f1 = as.formula(Deposit ~ .)
 
 bk_train$Deposit <- as.character(bk_train$Deposit)
 bk_train$Deposit <- as.factor(bk_train$Deposit)
@@ -337,18 +343,11 @@ mse_rf_train <- mean((yhat_rf_train - bk_train$Deposit) ^2)
 yhat_rf_test <- predict(Deposit_rf, bk_test)
 mse_rf_test <- mean((yhat_rf_test - bk_test$Deposit) ^2) 
 varImpPlot(Deposit_rf)
-mean(bank$duration)
-
-paste("Random Forest Train MSE",mse_rf_train)
-paste("Random Forest Train MSE",mse_rf_test)
 
 bank$DurationRange<-findInterval(bank$duration, c(0,100,200,300,400,500,600,800,1000,1500,2000,2500,3000))
-
-
-summary(bank1)
 ```
 
-From the XGBoost, we got that the most five important variables is `poutcome`, `contact`, `housing`, `loan`.
+From the XGBoost, we got that the five most important variables is `poutcome`, `contact`, `housing`, `loan`.
 
 ```{r echo=FALSE}
 varImpXGB <- varImp(model_xgb)
@@ -360,3 +359,21 @@ top5[match('housingyes', top5)] <- "housing"
 top5[match('loanyes', top5)] <- "loan"
 cbind(top5,top4)
 ```
+
+
+# Our Conclusion
+
+We have a few recommendations to our company. With our current data we would recommend that during our next campaign that we first focus on people in Group 3, then Group 2, finally Group 1. As Group 3 and 2 were the most likely to open up deposits. Also in the covariate plot, Group 3 had a higher balance and also took less time on the phone, according to the duration metric, making the team more efficient. When acquiring new data, we should apply the KNN algorithm to assign the group and follow the same order as above. However, we should predict the response variable using the supervised method for each new data observation in order to get an order within the group focusing first on those that have been predicted to the response we want. Our final and basic recommendation is that our marketing team utilize the groups to campaign differently to them based on other variables that we touched on in the exploratory analysis.
+
+
+
+
+
+
+
+
+
+
+
+
+
